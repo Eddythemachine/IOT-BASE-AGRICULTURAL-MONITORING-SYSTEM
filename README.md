@@ -29,15 +29,28 @@ An **ESP32-WROOM** microcontroller reads a **DHT11** (air temperature/humidity),
 a **DS18B20** (soil temperature), and a **resistive soil-moisture sensor** every
 2 seconds. A dual-threshold hysteresis controller drives a **5 V DC pump through a
 relay**: the pump turns **ON** when the raw soil reading exceeds `DRY_THRESHOLD = 2200`
-(dry soil = high resistance) and **OFF** when it falls below `WET_THRESHOLD = 1600`
-(wet soil = low resistance). A **20-second safety timeout** prevents flooding if the
-sensor fails. Readings are shown on a local **16×2 I²C LCD** and pushed over Wi-Fi to a
-**Google Apps Script → Google Sheets** backend (free cloud, zero subscription), then
-visualised on a custom web dashboard with charts, a manual pump override, and PDF export.
-
-By combining low-cost hardware, free cloud infrastructure, and simple but robust
-control logic, the system turns raw environmental data into actionable agricultural
-intelligence — for **under ₦150,000 (~US$95)**.
+(dry sThis project presents the design and implementation of an Internet of Things (IoT)-based
+agricultural monitoring system aimed at addressing the inefficiencies of traditional subsistence
+farming practices in Nigeria. The system integrates an ESP32-WROOM microcontroller with a
+network of sensors including a DHT11 for atmospheric temperature and humidity, a DS18B20
+for soil temperature, and a resistive soil moisture sensor that operates on the principle of inverse
+electrical resistance, where lower raw ADC values indicate wetter soil and higher values indicate
+drier soil.
+Data is captured through a continuous 2-second sensing loop, with the ESP32 reading all sensors
+in real-time. The soil moisture sensor is powered only during measurement intervals to minimize
+electrolysis and prolong sensor life. The captured data drives an automated irrigation control
+logic based on dual-threshold hysteresis: the pump activates when soil moisture exceeds the
+DRY_THRESHOLD (2200 raw ADC value, indicating high resistance/dry soil) and deactivates
+when moisture falls below the WET_THRESHOLD (1600 raw ADC value, indicating low
+resistance/wet soil). A 20-second safety timeout prevents overwatering in case of sensor failure.
+All sensor readings and pump states are displayed locally on a 16×2 I2C LCD and transmitted
+via Wi-Fi every 3 minutes to a Google Apps Script API, which logs the data as timestamped
+entries in a Google Sheets database.
+The system features a custom-built web application accessible from any internet-connected
+device, providing real-time data visualization, remote manual pump control, and PDF export
+functionality for farm record-keeping. By combining low-cost hardware, free cloud
+infrastructure, and intelligent control logic, this project delivers an affordable, scalable, and userfriendly decision support tool that transforms raw environmental data into actionable agricultural
+intelligence for small-scale farmers.
 
 ---
 
