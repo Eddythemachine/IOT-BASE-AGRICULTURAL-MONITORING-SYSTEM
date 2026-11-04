@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FarmSense — IoT Agricultural Monitoring Dashboard</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="logo">🌱</span>
+      <div>
+        <h1>FarmSense Dashboard</h1>
+        <p class="subtitle">IoT-Based Agricultural Monitoring System · ESP32 + Google Sheets</p>
+      </div>
+    </div>
+    <div class="header-right">
+      <span id="connBadge" class="badge demo">DEMO DATA</span>
+      <span id="lastUpdate" class="last-update">—</span>
+    </div>
+  </header>
+
+  <!-- Configuration banner -->
+  <section id="configBar" class="config-bar">
+    <label for="apiUrl">Google Apps Script URL:</label>
+    <input type="url" id="apiUrl" placeholder="https://script.google.com/macros/s/XXXX/exec">
+    <button id="saveConfig" class="btn primary">Connect</button>
+    <button id="useDemo" class="btn ghost">Use demo data</button>
+  </section>
+
+  <!-- Live cards -->
+  <main>
+    <section class="cards">
+      <div class="card">
+        <div class="card-icon">🌡️</div>
+        <div class="card-label">Air Temperature</div>
+        <div class="card-value" id="cardAirTemp">--</div>
+        <div class="card-unit">°C · DHT11</div>
+      </div>
+      <div class="card">
+        <div class="card-icon">💧</div>
+        <div class="card-label">Air Humidity</div>
+        <div class="card-value" id="cardHumidity">--</div>
+        <div class="card-unit">% RH · DHT11</div>
+      </div>
+      <div class="card">
+        <div class="card-icon">🌍</div>
+        <div class="card-label">Soil Temperature</div>
+        <div class="card-value" id="cardSoilTemp">--</div>
+        <div class="card-unit">°C · DS18B20</div>
+      </div>
+      <div class="card">
+        <div class="card-icon">🌱</div>
+        <div class="card-label">Soil Moisture</div>
+        <div class="card-value" id="cardMoisture">--</div>
+        <div class="card-unit">raw ADC · <span id="moistStatus">—</span></div>
+      </div>
+      <div class="card pump-card" id="pumpCard">
+        <div class="card-icon">🚰</div>
+        <div class="card-label">Irrigation Pump</div>
+        <div class="card-value" id="cardPump">--</div>
+        <div class="card-unit">relay via ESP32 · D26</div>
+      </div>
+    </section>
+
+    <!-- Pump control -->
+    <section class="panel pump-panel">
+      <div>
+        <h2>Manual Pump Override</h2>
+        <p class="muted">Overrides the automated hysteresis control until the next sensor cycle.</p>
+      </div>
+      <div class="pump-buttons">
+        <button id="pumpOn" class="btn success">▶ Turn Pump ON</button>
+        <button id="pumpOff" class="btn danger">■ Turn Pump OFF</button>
+      </div>
+      <p id="pumpMsg" class="muted"></p>
+    </section>
+
+    <!-- Charts: each canvas wrapped in a fixed-height container (Chart.js needs
+         the height on the PARENT when maintainAspectRatio is false) -->
+    <section class="charts-grid">
+      <div class="panel chart-panel">
+        <h2>🌡️ Temperature</h2>
+        <div class="chart-container"><canvas id="tempChart"></canvas></div>
+      </div>
+      <div class="panel chart-panel">
+        <h2>💧 Humidity</h2>
+        <div class="chart-container"><canvas id="humChart"></canvas></div>
+      </div>
+      <div class="panel chart-panel">
+        <h2>🌱 Soil Moisture (raw ADC) <span class="hint">lower = wetter</span></h2>
+        <div class="chart-container"><canvas id="moistChart"></canvas></div>
+      </div>
+      <div class="panel chart-panel">
+        <h2>🚰 Pump State</h2>
+        <div class="chart-container"><canvas id="pumpChart"></canvas></div>
+      </div>
+    </section>
+
+    <!-- Full data table -->
+    <section class="panel">
+      <div class="table-header">
+        <h2>📋 Recent Readings</h2>
+        <div>
+          <label for="rowLimit">Show:</label>
+          <select id="rowLimit">
+            <option value="25">25</option>
+            <option value="50" selected>50</option>
+            <option value="100">100</option>
+            <option value="200">200</option>
+          </select>
+          <button id="refreshBtn" class="btn ghost">↻ Refresh</button>
+          <button id="pdfBtn" class="btn primary">⬇ Export PDF Report</button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table id="dataTable">
+          <thead>
+            <tr>
+              <th>#</th><th>Timestamp</th><th>Air Temp (°C)</th><th>Humidity (%)</th>
+              <th>Soil Temp (°C)</th><th>Soil Raw</th><th>Moisture Status</th><th>Pump</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <p>Onayifeke Edison Oghenerunor (COT/6392/2019) &amp; Otome Fortune (COT/6397/2019) ·
+      Dept. of Electrical/Electronic Engineering, FUPRE · Supervisor: Engr. Mrs. Rebecca O. Ohwo</p>
+      <p class="muted">DRY_THRESHOLD = 2200 · WET_THRESHOLD = 1600 · 20 s pump safety timeout</p>
+    </footer>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
