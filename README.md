@@ -20,16 +20,7 @@ College of Engineering and Technology, Federal University of Petroleum Resources
 
 ## 📌 Abstract
 
-This project designs and implements an Internet of Things (IoT)-based agricultural
-monitoring system that addresses the inefficiencies of traditional subsistence farming
-in Nigeria — overwatering, underwatering, wasted labour, and zero access to real-time
-farm data.
-
-An **ESP32-WROOM** microcontroller reads a **DHT11** (air temperature/humidity),
-a **DS18B20** (soil temperature), and a **resistive soil-moisture sensor** every
-2 seconds. A dual-threshold hysteresis controller drives a **5 V DC pump through a
-relay**: the pump turns **ON** when the raw soil reading exceeds `DRY_THRESHOLD = 2200`
-(dry sThis project presents the design and implementation of an Internet of Things (IoT)-based
+This project presents the design and implementation of an Internet of Things (IoT)-based
 agricultural monitoring system aimed at addressing the inefficiencies of traditional subsistence
 farming practices in Nigeria. The system integrates an ESP32-WROOM microcontroller with a
 network of sensors including a DHT11 for atmospheric temperature and humidity, a DS18B20
