@@ -28,17 +28,16 @@ for soil temperature, and a resistive soil moisture sensor that operates on the 
 electrical resistance, where lower raw ADC values indicate wetter soil and higher values indicate
 drier soil.
 Data is captured through a continuous 2-second sensing loop, with the ESP32 reading all sensors
-in real-time. The soil moisture sensor is powered only during measurement intervals to minimize
-electrolysis and prolong sensor life. The captured data drives an automated irrigation control
+in real-time. The captured data drives an automated irrigation control
 logic based on dual-threshold hysteresis: the pump activates when soil moisture exceeds the
 DRY_THRESHOLD (2200 raw ADC value, indicating high resistance/dry soil) and deactivates
 when moisture falls below the WET_THRESHOLD (1600 raw ADC value, indicating low
 resistance/wet soil). A 20-second safety timeout prevents overwatering in case of sensor failure.
 All sensor readings and pump states are displayed locally on a 16×2 I2C LCD and transmitted
-via Wi-Fi every 3 minutes to a Google Apps Script API, which logs the data as timestamped
+via Wi-Fi every minute to a Google Apps Script API, which logs the data as timestamped
 entries in a Google Sheets database.
 The system features a custom-built web application accessible from any internet-connected
-device, providing real-time data visualization, remote manual pump control, and PDF export
+device, providing real-time data visualization, a prepared manual pump-command interface, and PDF export
 functionality for farm record-keeping. By combining low-cost hardware, free cloud
 infrastructure, and intelligent control logic, this project delivers an affordable, scalable, and userfriendly decision support tool that transforms raw environmental data into actionable agricultural
 intelligence for small-scale farmers.
@@ -62,6 +61,33 @@ accessible from any device** — no app install, no paid IoT platform, no on-sit
 
 ---
 
+## 🎯 Project Overview
+
+FarmSense combines low-cost sensing, local control, and free cloud infrastructure into one
+field-monitoring system. The ESP32 reads air temperature and humidity, soil temperature,
+and soil-moisture resistance every 2 seconds. A relay-controlled DC pump is switched by
+hysteresis and a maximum run-time safety limit, while an I²C LCD provides local status.
+
+Sensor readings are sent to Google Apps Script and stored in Google Sheets approximately
+every minute. A plain HTML, CSS, and JavaScript dashboard retrieves the records, displays
+live cards and time-series charts, provides a data table, and exports a PDF report.
+
+### Problem Statement
+
+Smallholder farmers often monitor crops manually and rely on irregular watering schedules.
+This can waste water, increase labour, and make it difficult to detect poor irrigation or
+environmental changes promptly. Commercial monitoring systems may require paid platforms,
+specialised devices, or infrastructure that is impractical for low-budget farms.
+
+### Objectives
+
+1. Develop a low-cost sensor network using an ESP32 for real-time environmental monitoring.
+2. Automate irrigation using soil-moisture hysteresis and a pump runtime safety limit.
+3. Store sensor readings in a timestamped, remotely accessible Google Sheets database.
+4. Provide a responsive web dashboard for data visualisation, records, and reporting.
+
+---
+
 ## ✨ Features
 
 | Feature | Description |
@@ -72,7 +98,7 @@ accessible from any device** — no app install, no paid IoT platform, no on-sit
 | 📟 Local display | 16×2 I²C LCD with live readings and pump status |
 | ☁️ Free cloud logging | Google Apps Script API → Google Sheets timestamped records |
 | 🌐 Web dashboard | Any-device HTML/CSS/JS dashboard with charts + PDF export |
-| 🕹️ Manual override | Pump control from the web app, independent of automation |
+| 🕹️ Remote control interface | Web command queue for a manual pump override |
 | 🔋 Battery powered | 7.4 V Li-ion pack with LM7805 regulation — field-portable |
 
 ---
@@ -101,8 +127,8 @@ accessible from any device** — no app install, no paid IoT platform, no on-sit
 
 1. **Init** → sensors, LCD, relay-OFF for safety, Wi-Fi connect
 2. **Loop (every 2 s)** → read all sensors → run pump hysteresis logic → safety-timeout check → update LCD
-3. **Cloud timer (every ~1–3 min)** → JSON payload via HTTPS POST to Apps Script → Google Sheets row
-4. **Web app** → fetches the sheet data → renders graphs, current state, and the manual pump control
+3. **Cloud timer (every minute)** → JSON payload via HTTPS POST to Apps Script → Google Sheets row
+4. **Web app** → fetches the sheet data → renders graphs and current state; command queue support is prepared
 
 ---
 
@@ -153,7 +179,7 @@ buck-converter upgrade).
 | Component | GPIO | Protocol | Notes |
 |---|---|---|---|
 | DHT11 | D4 | 1-Wire | air temp + humidity |
-| Soil moisture (AO) | D34 | ADC1 | input-only pin — no pull-ups distorting readings |
+| Soil moisture (AO) | D36 | ADC1 | ADC1 input used by firmware |
 | Relay module (IN) | D26 | Digital | `HIGH` = pump ON (active-low module handled in firmware) |
 | LCD SDA | D21 | I²C | hardware I²C |
 | LCD SCL | D22 | I²C | hardware I²C |
@@ -161,6 +187,50 @@ buck-converter upgrade).
 | Built-in LED | D2 | Digital | status indicator |
 
 ---
+
+## 🔧 Hardware Implementation
+
+### Physical prototype
+
+![Completed agricultural monitoring prototype](assets/images/hardware/prototype.jpeg)
+
+**Figure 1 — Completed enclosure and test setup.** The image shows the protected controller
+box, 16×2 I²C LCD, relay/pump wiring, soil sensor in the test container, and DC pump
+tubing used during the field and indoor tests.
+
+![ESP32 controller assembly](assets/images/hardware/esp32-setup.jpeg)
+
+**Figure 2 — Controller assembly inside the enclosure.** The ESP32, relay modules,
+wiring harness, battery, and regulator are mounted together for bench testing.
+
+![Overall prototype test arrangement](assets/images/hardware/hardware7.jpeg)
+
+**Figure 3 — Overall laboratory test arrangement.** The test rig includes the controller
+enclosure, soil container, pump tubing, and measurement instruments used during setup.
+
+## 🔌 Circuit Design and Connections
+
+![ESP32 agricultural monitoring circuit diagram](assets/images/circuit/circuit-diagram.jpeg)
+
+**Figure 4 — Circuit diagram.** The diagram connects the DHT11, DS18B20, resistive soil
+moisture sensor, I²C LCD, relay, DC pump, and power supply to the ESP32.
+
+Key electrical relationships:
+
+- DHT11 data uses GPIO 4.
+- DS18B20 data uses GPIO 16.
+- Soil-moisture AO output uses GPIO 36 (ADC1).
+- Relay control uses GPIO 26.
+- LCD SDA and SCL use GPIO 21 and GPIO 22.
+- The relay isolates the ESP32 control circuit from the pump supply.
+
+## 🧪 Proteus Circuit Simulation
+
+![Proteus simulation of the monitoring and irrigation circuit](assets/images/proteus/simulation-result.png)
+
+**Figure 5 — Proteus schematic and simulation view.** This simulation captures the ESP32,
+sensors, I²C LCD, relay, DC pump, and supply arrangement used as a pre-implementation
+check before physical assembly.
 
 ## 🚀 Getting Started
 
@@ -183,8 +253,53 @@ POSTs JSON; each reading becomes a timestamped row.
 
 The dashboard (`web/`) is plain HTML/CSS/JS — host it free on GitHub Pages, Netlify, or
 Vercel. It reads the sheet via the Apps Script `doGet` endpoint, renders line charts of
-the sensor history, displays the current pump state, and provides the manual pump control
-and a PDF export of records for farm bookkeeping.
+the sensor history, displays the current pump state, and provides a prepared manual pump
+command interface and PDF export of records for farm bookkeeping.
+
+---
+
+## 💻 Software Implementation
+
+### Firmware
+
+The Arduino C++ firmware in `firmware/ESP32_Plant_Monitor.ino` manages sensor polling,
+LCD updates, Wi-Fi connectivity, hysteresis control, pump runtime safety, and cloud POST
+requests. DHT11, DS18B20, I²C LCD, OneWire, and Wi-Fi/HTTP libraries are used.
+
+### Cloud integration
+
+`cloud/Code.gs` provides a Google Apps Script web application:
+
+- `doPost` accepts the ESP32 JSON reading and appends it to the `SensorData` sheet.
+- `doGet?action=data&limit=N` returns the newest readings for the dashboard.
+- `doGet?action=cmd&pump=1|0` records a manual pump command.
+- `doGet?action=getcmd` returns the queued command for firmware polling.
+
+The dashboard queue is implemented, but firmware command polling must be added to the
+ESP32 loop before remote pump commands can be applied automatically.
+
+### Web dashboard
+
+The dashboard in `web/` uses HTML, CSS, JavaScript, and Chart.js. It supports live data
+cards, temperature/humidity/moisture/pump charts, recent readings, row limits, refresh,
+demo data, and PDF export.
+
+## ⚙️ System Operation and Control Logic
+
+1. The ESP32 connects to Wi-Fi and leaves the pump off during startup.
+2. Every 2 seconds, it reads the DHT11, DS18B20, and soil-moisture ADC.
+3. If the pump is off and raw soil moisture is above 2200, the pump is activated.
+4. If the pump is on and raw soil moisture is below 1600, the pump is deactivated.
+5. The pump is forced off after 20 seconds of continuous operation.
+6. Readings are posted to Google Sheets approximately every minute.
+7. The LCD shows air and soil temperature, humidity, moisture, and pump state.
+
+## 🌐 Data Monitoring and Web Integration
+
+The Google Sheet acts as a timestamped sensor database and provides the source data for
+the web dashboard. The dashboard can be hosted on GitHub Pages or another static host;
+the Apps Script URL is entered through the dashboard configuration bar rather than
+hard-coded in the source repository.
 
 ---
 
@@ -267,7 +382,7 @@ interval and sensor settling after irrigation, not logic failures.
 
 | # | Objective | Evidence | Status |
 |---|---|---|---|
-| i | User-friendly web app for remote monitoring/control | Live dashboard + manual pump override, any-device browser | ✅ |
+| i | User-friendly web app for remote monitoring/control | Live dashboard and prepared command queue, any-device browser | ✅ |
 | ii | Automated irrigation from soil moisture data | Closed-loop events with 2.7× wetting/drying ratio, hysteresis + timeout | ✅ |
 | iii | Continuous real-time sensor network (moisture, temp, humidity) | 2 s loop; validated diurnal and root-zone patterns | ✅ |
 | iv | Real-time visualisation (graphs/charts) | Time-series charts + PDF export in the web app | ✅ |
@@ -286,6 +401,52 @@ For reproducibility, we flag the known artefacts in the dataset:
 
 ---
 
+## 🛠️ Challenges and Solutions
+
+| Challenge | Practical response |
+|---|---|
+| Soil moisture calibration | Used a resistance-based ADC model and validated dry, moist, wet, and open-circuit readings |
+| Pump chatter near thresholds | Applied a 600-raw hysteresis band instead of a single threshold |
+| Uncontrolled pump runtime | Added a 20-second maximum run-time safety timeout |
+| Moisture sensor degradation | Recommended intermittent sensor powering and a future capacitive sensor |
+| Long-running cloud logging | Stored readings in Google Sheets and limited dashboard requests to a configurable row count |
+| Portable power constraints | Used a 7.4 V battery pack and LM7805 regulator, with a buck converter identified for future efficiency |
+| Internet outages | Kept local sensing, LCD display, and irrigation control independent of cloud availability |
+
+## 👥 Team Contributions
+
+| Contributor | Project role |
+|---|---|
+| **Onayifeke Edison Oghenerunor** (COT/6392/2019) | Co-author and project implementation contributor |
+| **Otome Fortune** (COT/6397/2019) | Co-author and project implementation contributor |
+
+The final hardware, software, testing, documentation, and thesis work are presented as a
+joint final-year project. A separate verified work breakdown was not retained in the
+repository, so this README avoids assigning unrecorded individual contributions.
+
+## 🧰 Technologies and Tools
+
+- ESP32-WROOM and Arduino C++
+- DHT11, DS18B20, resistive soil-moisture sensor, relay, LCD
+- HTML5, CSS, JavaScript, and Chart.js
+- Google Apps Script and Google Sheets
+- Proteus circuit and simulation environment
+- Git and GitHub Pages-compatible static hosting
+- Arduino IDE and serial monitoring
+- PDF export in the browser
+
+## ✅ Conclusion
+
+The project demonstrates that a low-cost ESP32 system can combine local environmental
+sensing, soil-moisture-based irrigation, a runtime safety limit, cloud logging, and
+browser-based visualisation. The field and bench observations support the effectiveness
+of hysteresis control and confirm the use of Google Sheets as an affordable remote data
+store. The system is suitable as an accessible agricultural monitoring prototype, with
+capacitive sensing, offline buffering, improved power conversion, and secure end-to-end
+remote pump control identified as priority improvements.
+
+---
+
 ## 💰 Cost vs. existing solutions
 
 | Approach | Typical cost | This project |
@@ -299,8 +460,8 @@ For reproducibility, we flag the known artefacts in the dataset:
 
 ## ⚠️ Limitations
 
-- Resistive moisture probe is subject to **electrolytic corrosion** (mitigated by powering
-  it only during measurement, but not eliminated).
+- Resistive moisture probe is subject to **electrolytic corrosion**; intermittent power
+  and a future capacitive sensor are the recommended mitigations.
 - Requires **on-farm Wi-Fi** and a separate internet connection for the farmer.
 - Thresholds are **soil-type specific** and were calibrated for the test soil only.
 - No user authentication or advanced cybersecurity beyond basic access control.
@@ -314,8 +475,8 @@ For reproducibility, we flag the known artefacts in the dataset:
 2. **SD-card offline buffering** — no data loss during network outages; sync when Wi-Fi returns.
 3. **Solar + TP4056 charge controller** — fully self-sustaining field unit, no manual recharging.
 4. **Buck converter instead of LM7805** — far better efficiency → significantly longer battery life.
-5. **Two-way web control** — pump commands from the dashboard to the ESP32 (via Google Apps
-   Script), already partially implemented as manual override.
+5. **Two-way web control** — complete ESP32 polling of the Google Apps Script command queue
+   so dashboard pump commands are applied end-to-end.
 
 ---
 
